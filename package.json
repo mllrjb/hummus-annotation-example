@@ -1,0 +1,16 @@
+{
+  "name": "hummus-annotation-example",
+  "version": "0.0.0",
+  "description": "",
+  "private": true,
+  "main": "example.js",
+  "scripts": {
+    "start": "node ./example.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "hummus": "^1.0.77"
+  }
+}
