@@ -8,7 +8,8 @@ const inStream = new hummus.PDFRStreamForFile(inPath);
 const outStream = new hummus.PDFWStreamForFile(outPath);
 const pdfWriter = hummus.createWriterToModify(
   inStream,
-  outStream
+  outStream,
+  {compress:false}
 );
 const pdfReader = hummus.createReader(inPath);
 
@@ -29,14 +30,14 @@ function writeAp(pdfWriter, {
       type : 'stroke',
       colorspace : 'rgb',
       color: 0xFC2125,
-      w:1
+      width:1
     })
     .writeText(
       text,
-      x,
-      y,
+      0,
+      0,
       {
-        fontSize,
+        size:fontSize,
         colorspace : 'rgb',
         color: 0xFC2125,
         font :arialFont
