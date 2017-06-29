@@ -22,13 +22,32 @@ function writeAp(pdfWriter, {
   x, y, w, h,
 }, text, objId) {
 
-  const xf = pdfWriter.createFormXObject(x, y, w, h, objId);
+  const xf = pdfWriter.createFormXObject(0, 0, w, h, objId);
 
   xf.getContentContext()
+    .drawRectangle(0,0,w,h,{
+      type : 'stroke',
+      colorspace : 'rgb',
+      color: 0xFC2125,
+      w:1
+    })
+    .writeText(
+      text,
+      x,
+      y,
+      {
+        fontSize,
+        colorspace : 'rgb',
+        color: 0xFC2125,
+        font :arialFont
+      }
+    ) 
+/*
+
     .RG(0.987, 0.129,  0.146)
     .w(0)
     .q()
-    .re(x, y, w, h)
+    .re(0, 0, w, h)
     .W()
     .n()
     .g(0)
@@ -40,7 +59,7 @@ function writeAp(pdfWriter, {
     .Td(x, y)
     .Tj(text, { encoding: 'code' })
     .ET()
-    .Q();
+    .Q();*/
 
   pdfWriter.endFormXObject(xf);
 }
@@ -85,7 +104,6 @@ function writeText(pdfWriter, text, lineNumber, dimensions) {
   apDict
     .writeKey('N')
     .writeObjectReferenceValue(nObjId);
-
   objectsContext
     .endDictionary(apDict)
     .endDictionary(dictionaryContext)
@@ -127,12 +145,15 @@ Object.getOwnPropertyNames(pageObject).forEach(function(element, index, array) {
 });
 
 const pageDict = pdfReader.parsePageDictionary(0)
-const annotsObject = pdfReader.queryDictionaryObject(pageDict, 'Annots');
 
 modifiedPageObject.writeKey('Annots');
 objectsContext.startArray()
 objectsContext.writeIndirectObjectReference(textObj);
-annotsObject.toJSArray().map(a => objectsContext.writeIndirectObjectReference(a.getObjectID()));
+if(pageDict.exists('Annots')) {
+  const annotsObject = pdfReader.queryDictionaryObject(pageDict, 'Annots');
+  annotsObject.toJSArray().map(a => objectsContext.writeIndirectObjectReference(a.getObjectID()));
+}
+
 objectsContext
   .endArray()
   .endLine()
