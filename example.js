@@ -15,32 +15,32 @@ const pdfReader = hummus.createReader(inPath);
 const margin = 5;
 const fontSize = 15;
 const lineSpacing = 2;
+const lineHeight = 1.5;
+const lineWidth = 1.1;
 
 const arialFont = pdfWriter.getFontForFile('arial.ttf');
 
 function writeAp(pdfWriter, {
-  x, y, w, h,
+  w, h,
 }, text, objId) {
 
-  const xf = pdfWriter.createFormXObject(x, y, w, h, objId);
+  const xf = pdfWriter.createFormXObject(0, 0, w, h, objId);
+
+  // draw text starting 1/4 of the way up
+  const textY = h / 4;
 
   xf.getContentContext()
-    .RG(0.987, 0.129,  0.146)
-    .w(0)
-    .q()
-    .re(x, y, w, h)
-    .W()
-    .n()
-    .g(0)
-    .G(0)
-    .w(1)
-    .BT()
-    .writeFreeCode('/Helv 15 Tf \r\n')
-    .rg(0.987, 0.129, 0.146)
-    .Td(x, y)
-    .Tj(text, { encoding: 'code' })
-    .ET()
-    .Q();
+    .writeText(
+      text,
+      0,
+      textY,
+      {
+        size: fontSize,
+        colorspace: 'rgb',
+        color: 0xFC2125,
+        font: arialFont
+      }
+    );
 
   pdfWriter.endFormXObject(xf);
 }
@@ -51,10 +51,12 @@ function writeText(pdfWriter, text, lineNumber, dimensions) {
   // calculate actual text dimensions
   var textDimensions = arialFont.calculateTextDimensions(text, fontSize);
 
+  const w = textDimensions.width * lineWidth;
+  const h = baseDimensions.height * lineHeight;
   const x = dimensions.xMin + margin;
   const y = (dimensions.yMax - margin) - (lineNumber * lineSpacing * baseDimensions.height);
-  const x1 = x + textDimensions.width;
-  const y1 = y + baseDimensions.height;
+  const x1 = x + w;
+  const y1 = y + h;
 
 	var objectsContext = pdfWriter.getObjectsContext();
   const annotationObj = objectsContext.startNewIndirectObject();
@@ -89,9 +91,7 @@ function writeText(pdfWriter, text, lineNumber, dimensions) {
     .endDictionary(dictionaryContext)
     .endIndirectObject();
 
-  writeAp(pdfWriter, {
-    x, y, w: textDimensions.width, h: baseDimensions.height
-  }, text, nObjId);
+  writeAp(pdfWriter, { w, h }, text, nObjId);
 
   return annotationObj;
 }
@@ -110,7 +110,12 @@ const mbObj = pageObject.MediaBox.toJSArray();
 const [xMin, yMin, xMax, yMax] = mbObj.map(pdfInt => pdfInt.value);
 const dimensions = { xMin, xMax, yMin, yMax };
 
-const textObj = writeText(pdfWriter, 'Example', 1, dimensions);
+const textObjArray = [
+  writeText(pdfWriter, 'Example One', 1, dimensions),
+  writeText(pdfWriter, '# Two', 2, dimensions),
+  writeText(pdfWriter, 'Third', 3, dimensions)
+];
+// const textObj = writeText(pdfWriter, 'Example', 1, dimensions);
 
 objectsContext.startModifiedIndirectObject(pageId);
 const modifiedPageObject = pdfWriter
@@ -129,7 +134,7 @@ const annotsObject = pdfReader.queryDictionaryObject(pageDict, 'Annots');
 
 modifiedPageObject.writeKey('Annots');
 objectsContext.startArray()
-objectsContext.writeIndirectObjectReference(textObj);
+textObjArray.map(textObj => objectsContext.writeIndirectObjectReference(textObj));
 annotsObject.toJSArray().map(a => objectsContext.writeIndirectObjectReference(a.getObjectID()));
 objectsContext
   .endArray()
